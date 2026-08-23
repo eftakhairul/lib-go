@@ -50,3 +50,27 @@ func TestWalkFields_LeafNamesAndRecursion(t *testing.T) {
 		t.Fatal("expected walkFields to allocate nil pointer-to-struct field Ptr")
 	}
 }
+
+// privateHelper is an unexported struct type used to test error handling
+// for anonymous pointer fields to unexported types.
+type privateHelper struct {
+	Value string
+}
+
+type structWithUnexportedAnonymousPtr struct {
+	*privateHelper // anonymous pointer field to unexported type
+}
+
+func TestWalkFields_UnexportedAnonymousPtrReturnsError(t *testing.T) {
+	var out structWithUnexportedAnonymousPtr
+	err := walkFields(reflect.ValueOf(&out).Elem(), "", func(field reflect.StructField, fv reflect.Value, autoName string) error {
+		return nil
+	})
+
+	if err == nil {
+		t.Fatal("expected walkFields to return an error for unexported anonymous pointer field, got nil")
+	}
+	if err.Error() != "config: field privateHelper is not settable (reached through an unexported anonymous field)" {
+		t.Errorf("unexpected error message: %v", err)
+	}
+}

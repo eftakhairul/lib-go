@@ -1,6 +1,9 @@
 package config
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 // isLeafType reports whether t should be treated as a leaf value (parsed
 // directly from a string) rather than recursed into as a nested struct.
@@ -44,6 +47,9 @@ func walkFields(v reflect.Value, prefix string, visit func(field reflect.StructF
 			target := fv
 			if target.Kind() == reflect.Ptr {
 				if target.IsNil() {
+					if !target.CanSet() {
+						return fmt.Errorf("config: field %s is not settable (reached through an unexported anonymous field)", field.Name)
+					}
 					target.Set(reflect.New(target.Type().Elem()))
 				}
 				target = target.Elem()
