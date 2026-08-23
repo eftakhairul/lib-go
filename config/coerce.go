@@ -55,7 +55,7 @@ func setFieldFromString(v reflect.Value, s string) error {
 			v.SetInt(int64(d))
 			return nil
 		}
-		n, err := strconv.ParseInt(s, 10, 64)
+		n, err := strconv.ParseInt(s, 10, v.Type().Bits())
 		if err != nil {
 			return fmt.Errorf("parsing int from %q: %w", s, err)
 		}
@@ -63,7 +63,7 @@ func setFieldFromString(v reflect.Value, s string) error {
 		return nil
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		n, err := strconv.ParseUint(s, 10, 64)
+		n, err := strconv.ParseUint(s, 10, v.Type().Bits())
 		if err != nil {
 			return fmt.Errorf("parsing uint from %q: %w", s, err)
 		}

@@ -123,3 +123,55 @@ func TestSetFieldFromString_BadValue(t *testing.T) {
 		t.Fatal("expected error for unparsable int, got nil")
 	}
 }
+
+func TestSetFieldFromString_Uint8Overflow(t *testing.T) {
+	var target struct {
+		U8 uint8
+	}
+	err := setFieldFromString(reflect.ValueOf(&target).Elem().FieldByName("U8"), "300")
+	if err == nil {
+		t.Fatal("expected error for uint8 overflow (300 > 255), got nil")
+	}
+	if target.U8 != 0 {
+		t.Errorf("U8 = %d, want 0 (unchanged after error)", target.U8)
+	}
+}
+
+func TestSetFieldFromString_Int8Overflow(t *testing.T) {
+	var target struct {
+		I8 int8
+	}
+	err := setFieldFromString(reflect.ValueOf(&target).Elem().FieldByName("I8"), "200")
+	if err == nil {
+		t.Fatal("expected error for int8 overflow (200 > 127), got nil")
+	}
+	if target.I8 != 0 {
+		t.Errorf("I8 = %d, want 0 (unchanged after error)", target.I8)
+	}
+}
+
+func TestSetFieldFromString_Int8Underflow(t *testing.T) {
+	var target struct {
+		I8 int8
+	}
+	err := setFieldFromString(reflect.ValueOf(&target).Elem().FieldByName("I8"), "-200")
+	if err == nil {
+		t.Fatal("expected error for int8 underflow (-200 < -128), got nil")
+	}
+	if target.I8 != 0 {
+		t.Errorf("I8 = %d, want 0 (unchanged after error)", target.I8)
+	}
+}
+
+func TestSetFieldFromString_Uint16Overflow(t *testing.T) {
+	var target struct {
+		U16 uint16
+	}
+	err := setFieldFromString(reflect.ValueOf(&target).Elem().FieldByName("U16"), "100000")
+	if err == nil {
+		t.Fatal("expected error for uint16 overflow (100000 > 65535), got nil")
+	}
+	if target.U16 != 0 {
+		t.Errorf("U16 = %d, want 0 (unchanged after error)", target.U16)
+	}
+}
