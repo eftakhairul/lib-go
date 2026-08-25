@@ -175,3 +175,48 @@ func TestSetFieldFromString_Uint16Overflow(t *testing.T) {
 		t.Errorf("U16 = %d, want 0 (unchanged after error)", target.U16)
 	}
 }
+
+// LogLevel is a named string type used to verify that slices of named
+// string-kind elements (not just plain []string) are coerced correctly
+// instead of panicking on the final v.Set.
+type LogLevel string
+
+func TestSetFieldFromString_NamedElementSlice(t *testing.T) {
+	var target struct {
+		Levels []LogLevel
+	}
+	err := setFieldFromString(reflect.ValueOf(&target).Elem().FieldByName("Levels"), "debug,info,warn")
+	if err != nil {
+		t.Fatalf("named element slice: %v", err)
+	}
+	want := []LogLevel{"debug", "info", "warn"}
+	if !reflect.DeepEqual(target.Levels, want) {
+		t.Errorf("Levels = %v, want %v", target.Levels, want)
+	}
+}
+
+func TestSetFieldFromString_Float32InRange(t *testing.T) {
+	var target struct {
+		F32 float32
+	}
+	err := setFieldFromString(reflect.ValueOf(&target).Elem().FieldByName("F32"), "3.5")
+	if err != nil {
+		t.Fatalf("float32: %v", err)
+	}
+	if target.F32 != 3.5 {
+		t.Errorf("F32 = %v, want 3.5", target.F32)
+	}
+}
+
+func TestSetFieldFromString_Float32Overflow(t *testing.T) {
+	var target struct {
+		F32 float32
+	}
+	err := setFieldFromString(reflect.ValueOf(&target).Elem().FieldByName("F32"), "1e40")
+	if err == nil {
+		t.Fatal("expected error for float32 overflow (1e40 exceeds float32 range), got nil")
+	}
+	if target.F32 != 0 {
+		t.Errorf("F32 = %v, want 0 (unchanged after error)", target.F32)
+	}
+}

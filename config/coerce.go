@@ -23,7 +23,7 @@ var durationType = reflect.TypeOf(time.Duration(0))
 // setFieldFromString parses s and writes it into the addressable value v,
 // used for both `default` tag values and environment variable values.
 func setFieldFromString(v reflect.Value, s string) error {
-	if v.CanAddr() && implementsTextUnmarshaler(v.Type()) {
+	if v.CanAddr() && v.CanSet() && implementsTextUnmarshaler(v.Type()) {
 		return v.Addr().Interface().(encoding.TextUnmarshaler).UnmarshalText([]byte(s))
 	}
 
@@ -71,7 +71,7 @@ func setFieldFromString(v reflect.Value, s string) error {
 		return nil
 
 	case reflect.Float32, reflect.Float64:
-		f, err := strconv.ParseFloat(s, 64)
+		f, err := strconv.ParseFloat(s, v.Type().Bits())
 		if err != nil {
 			return fmt.Errorf("parsing float from %q: %w", s, err)
 		}
@@ -79,11 +79,14 @@ func setFieldFromString(v reflect.Value, s string) error {
 		return nil
 
 	case reflect.Slice:
-		if v.Type().Elem().Kind() != reflect.String {
-			return fmt.Errorf("unsupported slice element type %s", v.Type().Elem())
-		}
 		parts := strings.Split(s, ",")
-		v.Set(reflect.ValueOf(parts))
+		dst := reflect.MakeSlice(v.Type(), len(parts), len(parts))
+		for i, part := range parts {
+			if err := setFieldFromString(dst.Index(i), part); err != nil {
+				return fmt.Errorf("parsing slice element %d from %q: %w", i, part, err)
+			}
+		}
+		v.Set(dst)
 		return nil
 
 	default:

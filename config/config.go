@@ -48,6 +48,13 @@ func Load(path string, cfg any, opts ...Option) error {
 }
 
 func loadFile(path string, cfg any) error {
+	ext := strings.ToLower(filepath.Ext(path))
+	switch ext {
+	case ".json", ".yaml", ".yml":
+	default:
+		return fmt.Errorf("config: file %s: %w", path, ErrUnsupportedExtension)
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
@@ -56,7 +63,7 @@ func loadFile(path string, cfg any) error {
 		return fmt.Errorf("config: reading file %s: %w", path, err)
 	}
 
-	switch ext := strings.ToLower(filepath.Ext(path)); ext {
+	switch ext {
 	case ".json":
 		if err := json.Unmarshal(data, cfg); err != nil {
 			return fmt.Errorf("config: parsing json file %s: %w", path, err)
@@ -65,8 +72,6 @@ func loadFile(path string, cfg any) error {
 		if err := yaml.Unmarshal(data, cfg); err != nil {
 			return fmt.Errorf("config: parsing yaml file %s: %w", path, err)
 		}
-	default:
-		return fmt.Errorf("config: file %s: %w", path, ErrUnsupportedExtension)
 	}
 	return nil
 }
